@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Shield, MapPin, QrCode, Megaphone, Users, ClipboardList,
-  Eye, Lock, Mail, LogIn, Bell,
+  Eye, EyeOff, Lock, Mail, LogIn, Bell, AlertCircle,
 } from 'lucide-react';
 
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Tooltip, TooltipProvider, TooltipTrigger, TooltipContent,
 } from '@/components/ui/tooltip';
+import { signIn } from '@/backend/auth/authentication';
 
 const features = [
   {
@@ -41,7 +43,37 @@ const features = [
   },
 ];
 
+function getRoleBasedPath(role?: string): string {
+  switch (role) {
+    case 'guard': return '/guard/';
+    case 'admin': return '/admin/';
+    default: return '/student/';
+  }
+}
+
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await signIn(email, password);
+      // dbRole is fetched from the users table and is always DB-authoritative
+      navigate(getRoleBasedPath(result.dbRole), { replace: true });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <TooltipProvider>
       <div className="min-h-screen flex">
@@ -143,7 +175,8 @@ const LoginPage: React.FC = () => {
             </div>
 
             <Card className="border-0 shadow-xl shadow-slate-200/80 rounded-2xl overflow-hidden">
-              <CardContent className="px-5 pt-6 pb-5 space-y-4">
+              <CardContent className="px-5 pt-6 pb-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Email */}
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-xs font-medium text-slate-600">
@@ -156,6 +189,10 @@ const LoginPage: React.FC = () => {
                       type="email"
                       placeholder="name@vsu.edu"
                       className="pl-8 h-9 text-sm"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
                     />
                   </div>
                 </div>
@@ -184,28 +221,60 @@ const LoginPage: React.FC = () => {
                     <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       className="pl-8 pr-9 h-9 text-sm"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
                     />
                     <button
                       type="button"
+                      onClick={() => setShowPassword((v) => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-                      aria-label="Show password"
+                      aria-label="Toggle password visibility"
                     >
-                      <Eye size={14} />
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
                 </div>
 
+                {/* Error message */}
+                {error && (
+                  <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[12px] text-red-600">
+                    <AlertCircle size={13} className="shrink-0" />
+                    {error}
+                  </div>
+                )}
+
                 {/* Sign in button */}
-                <Button className="w-full h-9 gap-2 text-sm font-medium">
-                  <LogIn size={14} />
-                  Sign In
+                <Button type="submit" disabled={loading} className="w-full h-9 gap-2 text-sm font-medium">
+                  {loading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Signing in…
+                    </>
+                  ) : (
+                    <>
+                      <LogIn size={14} />
+                      Sign In
+                    </>
+                  )}
                 </Button>
+              </form>
               </CardContent>
 
               <CardFooter className="flex flex-col px-5 pb-5 pt-0">
+                <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+                  Don't have an account?
+                  <a
+                    href="/signup"
+                    className="text-slate-900 font-medium hover:underline underline-offset-2 transition-colors"
+                  >
+                    Sign up
+                  </a>
+                </div>
                 {/* Footer */}
                 <p className="text-[11px] text-center text-slate-400 w-full">
                   © 2026 Visayas State University · Security Department
