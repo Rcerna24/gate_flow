@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Shield, MapPin, QrCode, Megaphone, Users, ClipboardList,
   Bell, Eye, EyeOff, Lock, Mail, UserRound, Phone, Hash,
-  BookOpen, UserPlus, ChevronDown,
+  BookOpen, UserPlus, ChevronDown, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { signUp } from '@/backend/auth/authentication';
 
 const features = [
   {
@@ -42,11 +44,88 @@ const features = [
 const ROLES = ['Student', 'Faculty', 'Staff'] as const;
 type Role = (typeof ROLES)[number];
 
+function getRoleBasedPath(role: string): string {
+  switch (role) {
+    case 'guard': return '/guard/';
+    case 'admin': return '/admin/';
+    default: return '/student/';
+  }
+}
+
 const SignupPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  // Form fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [contact, setContact] = useState('');
+  const [department, setDepartment] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<Role>('Student');
+
+  // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [role, setRole] = useState<Role>('Student');
   const [roleOpen, setRoleOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  // Field-level errors
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function validate(): Record<string, string> {
+    const errs: Record<string, string> = {};
+    if (!firstName.trim()) errs.firstName = 'First name is required.';
+    if (!lastName.trim()) errs.lastName = 'Last name is required.';
+    if (!idNumber.trim()) errs.idNumber = 'ID number is required.';
+    if (!email.trim()) errs.email = 'Email is required.';
+    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'Enter a valid email.';
+    if (!contact.trim()) errs.contact = 'Contact number is required.';
+    else if (!/^09\d{9}$/.test(contact.trim())) errs.contact = 'Enter a valid PH number (09XXXXXXXXX).';
+    if (!department.trim()) errs.department = role === 'Student' ? 'Course & year is required.' : 'Department is required.';
+    if (!password) errs.password = 'Password is required.';
+    else if (password.length < 8) errs.password = 'Password must be at least 8 characters.';
+    if (!confirmPassword) errs.confirmPassword = 'Please confirm your password.';
+    else if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    return errs;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await signUp(email.trim(), password, {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        id_number: idNumber.trim(),
+        role: role.toLowerCase(),
+        contact: contact.trim(),
+        department: department.trim(),
+      });
+      // If a session was returned, email confirmation is off — redirect immediately.
+      if (data.session) {
+        navigate(getRoleBasedPath(role.toLowerCase()), { replace: true });
+      } else {
+        // Email confirmation required — show success message.
+        setSuccess(true);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -150,39 +229,84 @@ const SignupPage: React.FC = () => {
           <Card className="border-0 shadow-xl shadow-slate-200/80 rounded-2xl overflow-hidden">
             <CardContent className="px-5 pt-6 pb-5 space-y-4">
 
-              {/* ── Row: Full Name + ID Number ── */}
+              {/* ── Success state ── */}
+              {success ? (
+                <div className="flex flex-col items-center gap-3 py-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle2 size={24} className="text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">Account created!</p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Check your email at <span className="font-medium text-slate-700">{email}</span> to confirm your account before signing in.
+                    </p>
+                  </div>
+                  <a
+                    href="/login"
+                    className="mt-2 text-sm font-medium text-slate-900 hover:underline underline-offset-2"
+                  >
+                    Go to Sign In →
+                  </a>
+                </div>
+              ) : (
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+
+              {/* ── Row: First Name + Last Name ── */}
               <div className="grid grid-cols-2 gap-3">
-                {/* Full Name */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="fullname" className="text-xs font-medium text-slate-600">
-                    Full Name
+                  <Label htmlFor="firstname" className="text-xs font-medium text-slate-600">
+                    First Name
                   </Label>
                   <div className="relative">
                     <UserRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <Input
-                      id="fullname"
+                      id="firstname"
                       type="text"
-                      placeholder="Juan dela Cruz"
-                      className="pl-8 h-9 text-sm"
+                      placeholder="Juan"
+                      className={`pl-8 h-9 text-sm ${fieldErrors.firstName ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                     />
                   </div>
+                  {fieldErrors.firstName && <p className="text-[11px] text-red-500">{fieldErrors.firstName}</p>}
                 </div>
 
-                {/* ID Number */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="idnumber" className="text-xs font-medium text-slate-600">
-                    ID Number
+                  <Label htmlFor="lastname" className="text-xs font-medium text-slate-600">
+                    Last Name
                   </Label>
                   <div className="relative">
-                    <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <UserRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <Input
-                      id="idnumber"
+                      id="lastname"
                       type="text"
-                      placeholder="2024-XXXXX"
-                      className="pl-8 h-9 text-sm"
+                      placeholder="dela Cruz"
+                      className={`pl-8 h-9 text-sm ${fieldErrors.lastName ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                     />
                   </div>
+                  {fieldErrors.lastName && <p className="text-[11px] text-red-500">{fieldErrors.lastName}</p>}
                 </div>
+              </div>
+
+              {/* ID Number */}
+              <div className="space-y-1.5">
+                <Label htmlFor="idnumber" className="text-xs font-medium text-slate-600">
+                  ID Number
+                </Label>
+                <div className="relative">
+                  <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <Input
+                    id="idnumber"
+                    type="text"
+                    placeholder="2024-XXXXX"
+                    className={`pl-8 h-9 text-sm ${fieldErrors.idNumber ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                    value={idNumber}
+                    onChange={(e) => setIdNumber(e.target.value)}
+                  />
+                </div>
+                {fieldErrors.idNumber && <p className="text-[11px] text-red-500">{fieldErrors.idNumber}</p>}
               </div>
 
               {/* Email */}
@@ -196,9 +320,13 @@ const SignupPage: React.FC = () => {
                     id="email"
                     type="email"
                     placeholder="name@vsu.edu.ph"
-                    className="pl-8 h-9 text-sm"
+                    className={`pl-8 h-9 text-sm ${fieldErrors.email ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                   />
                 </div>
+                {fieldErrors.email && <p className="text-[11px] text-red-500">{fieldErrors.email}</p>}
               </div>
 
               {/* ── Row: Role + Contact ── */}
@@ -244,9 +372,12 @@ const SignupPage: React.FC = () => {
                       id="contact"
                       type="tel"
                       placeholder="09XXXXXXXXX"
-                      className="pl-8 h-9 text-sm"
+                      className={`pl-8 h-9 text-sm ${fieldErrors.contact ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                      value={contact}
+                      onChange={(e) => setContact(e.target.value)}
                     />
                   </div>
+                  {fieldErrors.contact && <p className="text-[11px] text-red-500">{fieldErrors.contact}</p>}
                 </div>
               </div>
 
@@ -265,9 +396,12 @@ const SignupPage: React.FC = () => {
                         ? 'e.g. BS Computer Science – 3rd Year'
                         : 'e.g. College of Engineering and Technology'
                     }
-                    className="pl-8 h-9 text-sm"
+                    className={`pl-8 h-9 text-sm ${fieldErrors.department ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
                   />
                 </div>
+                {fieldErrors.department && <p className="text-[11px] text-red-500">{fieldErrors.department}</p>}
               </div>
 
               {/* Divider */}
@@ -288,7 +422,10 @@ const SignupPage: React.FC = () => {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Min. 8 characters"
-                    className="pl-8 pr-9 h-9 text-sm"
+                    className={`pl-8 pr-9 h-9 text-sm ${fieldErrors.password ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -299,6 +436,7 @@ const SignupPage: React.FC = () => {
                     {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
+                {fieldErrors.password && <p className="text-[11px] text-red-500">{fieldErrors.password}</p>}
               </div>
 
               {/* Confirm Password */}
@@ -312,7 +450,10 @@ const SignupPage: React.FC = () => {
                     id="confirmPassword"
                     type={showConfirm ? 'text' : 'password'}
                     placeholder="Re-enter your password"
-                    className="pl-8 pr-9 h-9 text-sm"
+                    className={`pl-8 pr-9 h-9 text-sm ${fieldErrors.confirmPassword ? 'border-red-400 focus-visible:ring-red-300' : ''}`}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -323,7 +464,16 @@ const SignupPage: React.FC = () => {
                     {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
+                {fieldErrors.confirmPassword && <p className="text-[11px] text-red-500">{fieldErrors.confirmPassword}</p>}
               </div>
+
+              {/* API error */}
+              {error && (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[12px] text-red-600">
+                  <AlertCircle size={13} className="shrink-0" />
+                  {error}
+                </div>
+              )}
 
               {/* Terms notice */}
               <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -332,10 +482,22 @@ const SignupPage: React.FC = () => {
               </p>
 
               {/* Submit */}
-              <Button className="w-full h-9 gap-2 text-sm font-medium">
-                <UserPlus size={14} />
-                Create Account
+              <Button type="submit" disabled={loading} className="w-full h-9 gap-2 text-sm font-medium">
+                {loading ? (
+                  <>
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Creating account…
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={14} />
+                    Create Account
+                  </>
+                )}
               </Button>
+
+              </form>
+              )}
             </CardContent>
 
             <CardFooter className="flex flex-col gap-3 px-5 pb-5 pt-0">
