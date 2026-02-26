@@ -1,0 +1,175 @@
+VSU CAMPUS SECURITY SYSTEM FINALIZED SYSTEM STRUCTURE DOCUMENT
+====================================
+
+PROJECT OVERVIEW
+
+A role-based University Security Management System designed to optimize
+campus safety operations at VSU. The system centralizes user management,
+entry monitoring, incident reporting, visitor control, and controlled
+emergency broadcasting.
+
+SYSTEM ROLES
+
+1.  Admin
+2.  Guard
+3.  Student / Faculty / Staff
+4.  Visitor (Limited Access)
+
+============================================================ ADMIN
+ACCOUNT FEATURES
+============================================================
+
+1. Dashboard
+
+Displays: - Total Students Registered - Total Faculty/Staff Registered -
+Total Guards Registered - Active Visitors (Today) - Today’s Entry Count
+(Ingress/Egress) - Open Incidents - Active SOS Broadcast (if any)
+
+Basic Analytics: - Entries Today - Incidents Today - Visitor Passes
+Issued Today - SOS Broadcast Count
+
+2. User Management
+
+Manage the following accounts: - Students - Faculty/Staff - Guards
+
+Admin Capabilities: - Add User - Edit User Details - Deactivate
+Account - Reset Password - Assign Role
+
+3. Incident Reports
+
+Displays: - Title - Description - Location - Reported By - Timestamp -
+Severity - Status (Pending / Resolved)
+
+Admin Actions: - View Full Details - Update Status - Add “Action
+Taken” - Mark as Resolved
+
+4. Entry Logs
+
+Contains: - Name - Role - Entry or Exit - Location - Date - Time
+
+Admin Capabilities: - Filter by Date - Filter by Role - Search by Name -
+Download as CSV file
+
+5. Visitor Pass Management
+
+Visitor Application Fields: - Full Name - Contact Number - Purpose of
+Visit - Person to Visit - Date - Time Window - Duration of Validity
+
+Visitor Status: - Pending - Approved - Rejected - Expired
+
+Admin Capabilities: - Approve / Reject Visitor - Set Valid Time Window -
+Generate Temporary QR Code - View Visitor History - View Active Visitors
+
+Security Logic: - Visitor QR is time-bound - QR automatically expires -
+Backend enforces expiration validation
+
+6. SOS Broadcast System
+
+Who Can Trigger: - Admin - Guard
+
+Emergency Types: - Earthquake - Fire - Security Threat - Weather
+Warning - Custom Message
+
+When Triggered: - Sends SMS broadcast to all registered Students,
+Faculty/Staff, and Guards - Sends in-app notification - Creates
+emergency record in system - Displays emergency banner in dashboards
+
+Admin Can: - View SOS History - Close SOS Broadcast - Monitor Active
+Emergency
+
+============================================================ GUARD
+ACCOUNT FEATURES
+============================================================
+
+1. Dashboard
+
+Displays: - QR Scanner Access - Today’s Entry Count - Active SOS
+Broadcast - Recent Incident Reports - Active Visitors
+
+2. QR Scanner
+
+Scans: - Student QR - Faculty/Staff QR - Visitor QR
+
+System Logs: - Entry or Exit - Timestamp - Guard ID - Location
+
+Validation: - Reject expired visitor QR - Reject invalid QR - Show
+success/failure feedback
+
+3. Incident Reporting
+
+Guard Can: - Submit Incident - Add Description - Add Location - Set
+Severity - Upload Image
+
+4. Visitor Approval
+
+Guard Can: - Approve Walk-in Visitors - Validate Scheduled Visitors -
+Set Temporary Validity Duration
+
+5. SOS Broadcast Trigger
+
+Guard Can: - Trigger Emergency Broadcast - Select Emergency Type - Send
+Custom Message - View Active Emergency
+
+============================================================ STUDENT /
+FACULTY / STAFF ACCOUNT FEATURES
+============================================================
+
+1. Dashboard
+
+Displays: - Personal QR Code - Recent Entry History - Active Emergency
+Broadcast Banner - Incident Submission Access
+
+2. QR Code
+
+-   Unique per user
+-   Used for ingress/egress scanning
+-   Linked to user account
+-   Does not expose sensitive personal data
+
+3. Entry History
+
+User Can View: - Date - Time - Entry or Exit - Location
+
+4. Incident Reporting
+
+User Can: - Submit Incident - Add Description - Add Location - Attach
+Image (optional) - Select Severity
+
+User Can View: - Report Status - Admin Action Taken
+
+5. Emergency Broadcast Reception
+
+Users: - Receive SMS notifications - Receive in-app alerts - View
+emergency banner - Cannot trigger SOS
+
+============================================================ VISITOR
+FLOW ============================================================
+
+1.  Visitor submits application form.
+2.  Status set to Pending.
+3.  Admin or Guard reviews request.
+4.  If approved:
+    -   Time-bound QR generated.
+    -   QR automatically expires after time window.
+5.  Guard scans QR upon entry/exit.
+6.  System logs visitor activity.
+
+============================================================ CORE SYSTEM
+PRINCIPLES ============================================================
+
+-   Role-Based Access Control (RBAC)
+-   Time-bound Visitor Access
+-   Controlled Emergency Broadcasting
+-   Automated Entry Logging
+-   Incident Accountability Tracking
+-   Exportable Entry Logs
+-   Centralized Security Oversight
+-   Backend-Enforced Validation Rules
+
+============================================================ SYSTEM
+SUMMARY ============================================================
+
+The VSU Campus Security System provides centralized monitoring,
+controlled emergency dissemination, structured incident management,
+time-restricted visitor access, and automated entry tracking to ensure a
+secure, accountable, and efficient campus security infrastructure.

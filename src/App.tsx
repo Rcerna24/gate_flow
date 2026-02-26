@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import LoginPage from './frontend/login/LoginPage';
+import GuardDashboardPage from './frontend/guard/GuardDashboardPage';
+import GuardScannerPage from './frontend/guard/scanner/GuardScannerPage';
+import GuardLogPage from './frontend/guard/logs/GuardLogPage';
+import GuardIncidentReportsPage from './frontend/guard/incident-reports/GuardIncidentReportsPage';
+import GuardSOSPage from './frontend/guard/sos/GuardSOSPage';
+import GuardVisitorApprovalPage from './frontend/guard/visitors/GuardVisitorApprovalPage';
+import StudentDashboardPage from './frontend/student/StudentDashboardPage';
+import StudentLogHistoryPage from './frontend/student/log-history/StudentLogHistoryPage';
+import StudentProfilePage from './frontend/student/profile/StudentProfilePage';
+import StudentEmergencyAlertsPage from './frontend/student/emergency-alerts/StudentEmergencyAlertsPage';
+import StudentIncidentReportPage from './frontend/student/incident-report/StudentIncidentReportPage';
+import StudentQRCodePage from './frontend/student/qr-code/StudentQRCodePage';
+import AdminDashboardPage from './frontend/admin/AdminDashboardPage';
+import SignupPage from './frontend/signup/SignupPage';
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Router>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/guard/" element={<GuardDashboardPage />} />
+        <Route path="/guard/scanner" element={<GuardScannerPage />} />
+        <Route path="/guard/logs" element={<GuardLogPage />} />
+        <Route path="/guard/visitors" element={<GuardVisitorApprovalPage />} />
+        <Route path="/guard/incidents" element={<GuardIncidentReportsPage />} />
+        <Route path="/guard/sos" element={<GuardSOSPage />} />
+        <Route path="/student/" element={<StudentDashboardPage />} />
+        <Route path="/student/qr" element={<StudentQRCodePage />} />
+        <Route path="/student/history" element={<StudentLogHistoryPage />} />
+        <Route path="/student/profile" element={<StudentProfilePage />} />
+        <Route path="/student/alerts" element={<StudentEmergencyAlertsPage />} />
+        <Route path="/student/incidents" element={<StudentIncidentReportPage />} />
+        <Route path="/admin/" element={<AdminDashboardPage />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
+    
